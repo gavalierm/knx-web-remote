@@ -1,13 +1,13 @@
 <script>
   import { onMount } from "svelte";
-  import {connect, sendMessage, statusStore} from "./lib/websocketClient.svelte.js";
+  import { connect, sendMessage, statusStore } from "./lib/websocketClient.svelte.js";
 
   $: status = $statusStore;
 
   onMount(() => {
     //
-    localStorage.setItem('_host','knxrpi.local')
-    localStorage.setItem('_port','9240')
+    localStorage.setItem('_host', 'knxrpi.local')
+    localStorage.setItem('_port', '9240')
     connect()
   });
 
@@ -22,10 +22,10 @@
 
   let commands = [
     { "title": "Central", "path": "0/0/1" },
-    { "title": "Zvukári", "path": "0/1/0" },
-    { "title": "Sála", "path": "0/2/0" },
-    { "title": "Pódium", "path": "0/3/0" },
-    { "title": "Schody", "path": "0/4/0" }
+    { "title": "Schody", "path": "0/1/0" },
+    { "title": "Zvukári", "path": "0/2/0" },
+    { "title": "Sála", "path": "0/3/0" },
+    { "title": "Pódium", "path": "0/4/0" }
   ]
 </script>
 
@@ -47,7 +47,7 @@
   <button on:click={onSendMessage} value={'ADDR ' + command.path + ' ' + 0} class="off">
     <span>{command.title}</span>
   </button>
-  <button on:click={onSendMessage} value={'ADDR ' + command.path + ' ' + 1} class="on">
+  <button on:click={onSendMessage} value={' ADDR ' + command.path + ' ' + 1} class="on">
     <span>{command.title}</span>
   </button>
 

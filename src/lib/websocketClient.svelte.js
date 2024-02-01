@@ -22,10 +22,10 @@ export function getStatus() {
 export function connect() {
 	clearTimeout(global_connection_timer);
 	setStatus('connecting');
-	if (isNa(localStorage.getItem("_host")) || isNa(localStorage.getItem("_port")) || isNa(localStorage.getItem("_pass")) || isNa(localStorage.getItem("_quality"))) {
+	if (isNa(localStorage.getItem("_host")) || isNa(localStorage.getItem("_port"))) {
 		//no credentials
 		if (LOGGING) console.log("No credentials");
-		//return onClose();
+		return onClose();
 	}
 	//
 	//showWarr('connect');
@@ -35,8 +35,8 @@ export function connect() {
 		remoteWebSocket.close();
 	}
 
-	let wsUri = "ws://" + localStorage.getItem("_host") + ":" + localStorage.getItem("_port") + "/remote";
-	wsUri = "wss://echo.websocket.org"
+	let wsUri = "ws://" + localStorage.getItem("_host") + ":" + localStorage.getItem("_port");
+	//wsUri = "wss://echo.websocket.org"
 
 	remoteWebSocket = new WebSocket(wsUri);
 	remoteWebSocket.onopen = function() { onOpen(); };

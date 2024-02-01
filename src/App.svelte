@@ -6,6 +6,8 @@
 
   onMount(() => {
     //
+    localStorage.setItem('_host','knxrpi.local')
+    localStorage.setItem('_port','9240')
     connect()
   });
 
@@ -26,6 +28,11 @@
     { "title": "Schody", "path": "0/4/0" }
   ]
 </script>
+
+<svelte:head>
+  <title>KNX Svetla</title>
+</svelte:head>
+
 <h1>Svetlá</h1>
 {#if status !== 'connected'}
 <div class="status">{status}</div>
@@ -37,10 +44,10 @@
 
   {#each commands as command, i}
 
-  <button on:click={onSendMessage} value={command.path + ' ' + 0} class="off">
+  <button on:click={onSendMessage} value={'ADDR ' + command.path + ' ' + 0} class="off">
     <span>{command.title}</span>
   </button>
-  <button on:click={onSendMessage} value={command.path + ' ' + 1} class="on">
+  <button on:click={onSendMessage} value={'ADDR ' + command.path + ' ' + 1} class="on">
     <span>{command.title}</span>
   </button>
 

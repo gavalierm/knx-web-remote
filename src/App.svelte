@@ -8,24 +8,6 @@
 
   $: status = $statusStore;
 
-  async function detectSWUpdate() {
-    //console.log("test")
-    const registration = await navigator.serviceWorker.ready;
-    registration.addEventListener("updatefound", (event) => {
-      //console.log("found")
-      const newSW = registration.installing;
-      newSW.addEventListener("statechange", (event) => {
-        if (newSW.state == "installed") {
-          //console.log("installed")
-          if (confirm("New update available. Reload?")) {
-            newSW.postMessage({ type: "SKIP_WAITING" });
-            window.location.reload();
-          }
-        }
-      });
-    });
-  }
-
   async function requestNotificationPermission() {
     const permission = await Notification.requestPermission();
     if (permission === "granted") {
@@ -52,8 +34,6 @@
     }
   }
   onMount(() => {
-    //
-    detectSWUpdate();
     //
     checkNotificationPermission();
     //

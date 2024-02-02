@@ -6,12 +6,16 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "generate-pwa-assets": "pwa-assets-generator",
+    "pwa-assets-generator": "pwa-assets-generator"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^3.0.1",
+    "@vite-pwa/assets-generator": "^0.2.3",
     "svelte": "^4.2.8",
-    "vite": "^5.0.8"
+    "vite": "^5.0.8",
+    "vite-plugin-pwa": "^0.17.5"
   },
   "dependencies": {
     "stayawake.js": "^1.0.2"

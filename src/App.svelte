@@ -1,59 +1,112 @@
-<script>
+<script type="text/javascript">
   import { onMount } from "svelte";
-  import { connect, sendMessage, statusStore } from "./lib/websocketClient.svelte.js";
+  import {
+    connect,
+    sendMessage,
+    statusStore,
+  } from "./lib/websocketClient.svelte.js";
 
   $: status = $statusStore;
 
+  async function detectSWUpdate() {
+    //console.log("test")
+    const registration = await navigator.serviceWorker.ready;
+    registration.addEventListener("updatefound", (event) => {
+      //console.log("found")
+      const newSW = registration.installing;
+      newSW.addEventListener("statechange", (event) => {
+        if (newSW.state == "installed") {
+          //console.log("installed")
+          if (confirm("New update available. Reload?")) {
+            newSW.postMessage({ type: "SKIP_WAITING" });
+            window.location.reload();
+          }
+        }
+      });
+    });
+  }
+
+  async function requestNotificationPermission() {
+    const permission = await Notification.requestPermission();
+    if (permission === "granted") {
+      // You can now use the Badging API
+    }
+  }
+
+  async function checkNotificationPermission() {
+    const permissionStatus = await navigator.permissions.query({
+      name: "notifications",
+    });
+
+    switch (permissionStatus.state) {
+      case "granted":
+        // You can use the Badging API
+        break;
+      case "denied":
+        // The user has denied the permission
+        break;
+      default:
+        // The user has not yet granted or denied the permission
+        await requestNotificationPermission();
+        break;
+    }
+  }
   onMount(() => {
     //
-    localStorage.setItem('_host', 'knxrpi.local')
-    localStorage.setItem('_port', '9240')
-    connect()
+    detectSWUpdate();
+    //
+    checkNotificationPermission();
+    //
+    //
+    localStorage.setItem("_host", "knxrpi.local");
+    localStorage.setItem("_port", "9240");
+    connect();
   });
 
   function onSendMessage() {
-    console.log(this, this.value)
+    console.log(this, this.value);
     if (this.value == undefined) {
       return;
     }
-
     sendMessage(this.value);
   }
 
   let commands = [
-    { "title": "Central", "path": "0/0/1" },
-    { "title": "Schody", "path": "0/1/0" },
-    { "title": "Zvukári", "path": "0/2/0" },
-    { "title": "Sála", "path": "0/3/0" },
-    { "title": "Pódium", "path": "0/4/0" }
-  ]
+    { title: "Central", path: "0/0/1" },
+    { title: "Schody", path: "0/1/0" },
+    { title: "Zvukári", path: "0/2/0" },
+    { title: "Sála", path: "0/3/0" },
+    { title: "Pódium", path: "0/4/0" },
+  ];
 </script>
 
-<svelte:head>
-  <title>KNX Svetla</title>
-</svelte:head>
-
 <h1>Svetlá</h1>
-{#if status !== 'connected'}
-<div class="status">{status}</div>
+{#if status !== "connected"}
+  <div class="status">{status}</div>
 {:else}
-<div class="buttons">
+  <div class="buttons">
+    <span class="label">OFF</span>
+    <span class="label">ON</span>
 
-  <span class="label">OFF</span>
-  <span class="label">ON</span>
-
-  {#each commands as command, i}
-
-  <button on:click={onSendMessage} value={'ADDR ' + command.path + ' ' + 0} class="off">
-    <span>{command.title}</span>
-  </button>
-  <button on:click={onSendMessage} value={' ADDR ' + command.path + ' ' + 1} class="on">
-    <span>{command.title}</span>
-  </button>
-
-  {/each}
-</div>
+    {#each commands as command, i}
+      <button
+        on:click={onSendMessage}
+        value={"ADDR " + command.path + " " + 0}
+        class="off"
+      >
+        <span>{command.title}</span>
+      </button>
+      <button
+        on:click={onSendMessage}
+        value={" ADDR " + command.path + " " + 1}
+        class="on"
+      >
+        <span>{command.title}</span>
+      </button>
+    {/each}
+  </div>
 {/if}
+
 <style type="text/css">
   h1 {
     text-transform: uppercase;

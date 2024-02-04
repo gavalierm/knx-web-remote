@@ -1,10 +1,29 @@
 <script type="text/javascript">
+  //
+  //
   import { onMount } from "svelte";
   import {
     connect,
     sendMessage,
     statusStore,
   } from "./lib/websocketClient.svelte.js";
+  //
+  import NoSleep from "@zakj/no-sleep";
+  var noSleep = new NoSleep();
+
+  async function requestNoSleep() {
+    // Enable wake lock.
+    // (must be wrapped in a user input event handler e.g. a mouse or touch handler)
+    document.addEventListener(
+      "click",
+      function enableNoSleep() {
+        console.warn("Enable NoSleep")
+        document.removeEventListener("click", enableNoSleep, false);
+        noSleep.enable();
+      },
+      false,
+    );
+  }
 
   $: status = $statusStore;
 
@@ -34,6 +53,8 @@
     }
   }
   onMount(() => {
+    //
+    requestNoSleep();
     //
     checkNotificationPermission();
     //

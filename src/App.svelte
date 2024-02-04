@@ -19,7 +19,7 @@
       function enableNoSleep() {
         console.warn("Enable NoSleep")
         document.removeEventListener("click", enableNoSleep, false);
-        noSleep.enable();
+        //noSleep.enable();
       },
       false,
     );

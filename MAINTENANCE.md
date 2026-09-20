@@ -16,6 +16,26 @@ The check that was skipped: asking what the verification loop actually is, inste
 
 Corrected in `CLAUDE.md` here and in `../CLAUDE.md`.
 
+### Measured: resolving `knxrpi.local` costs 5 seconds per connection
+
+```
+ws://10.77.8.208:9240       15 ms    15 ms    12 ms
+ws://knxrpi.local:9240    5029 ms  5029 ms  5024 ms
+
+hostname resolution alone:  knxrpi.local 5.04 s   ·   10.77.8.208 0.03 s
+```
+
+The delay is entirely in name resolution, not the connection. `.local` is tried over mDNS first, times out after five seconds, and only then falls back to the router's DNS record.
+
+This app hardcodes `knxrpi.local` (`App.svelte` overwrites `localStorage._host` with it on every mount) and retries every 5 s, so after any bridge restart the phone sits idle for five seconds before it can show anything, and during an outage those waits chain. Measured from macOS; browsers use their own resolvers, so the exact cost on a phone needs its own measurement — but the name is the thing to stop depending on.
+
+Options, in order of preference:
+
+1. **A DHCP reservation for the Pi plus a name that is not `.local`.** The address is a lease (`dhcpcd: eth0: leased 10.77.8.208 for 1800 seconds`), so hardcoding the IP without a reservation trades a slow connection for a broken one. Router work — the operator's call.
+2. **Client-side: try the IP first and fall back to the hostname.** Needs no router change, survives an address change, and removes the delay in the common case.
+
+Do not simply hardcode the IP.
+
 ### State of this repository
 
 Untouched so far in this maintenance work. All effort went to the bridge, where both causes of the recurring outage were. Known defects, unchanged and documented in `CLAUDE.md`:

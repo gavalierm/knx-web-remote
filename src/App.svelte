@@ -232,10 +232,10 @@
     {/each}
   </div>
 
-  <h2>Okruhy</h2>
-  {#if !knowsState}
-    <div class="status">čaká sa na stav zbernice</div>
-  {/if}
+  <h2>
+    <span>Okruhy</span>
+    {#if !knowsState}<span class="hint">čaká sa na stav</span>{/if}
+  </h2>
   <div class="circuits">
     {#each commands as command (command.name)}
       <div class="circuit" class:lit={state[command.name]?.value === "1"}>
@@ -324,12 +324,26 @@
   }
 
   h2 {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1em;
     font-size: 0.72em;
     text-transform: uppercase;
     letter-spacing: 0.1em;
     color: var(--text-2);
     font-weight: 700;
     margin: 0 0 0.75em;
+  }
+
+  /* Lives inside the heading on purpose. It used to sit between the heading
+     and the rows, so the whole list jumped the moment the bus said anything.
+     The heading is always there; this appears within it and shifts nothing. */
+  h2 .hint {
+    text-transform: none;
+    letter-spacing: normal;
+    font-weight: 500;
+    color: var(--text-2);
   }
 
   .status {

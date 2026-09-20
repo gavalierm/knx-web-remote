@@ -66,6 +66,22 @@ The last is the worst of them, because it fails quietly: a wrong claim gets argu
 
 The connection-timing one has a reusable lesson for this project specifically: **connections take seconds, not milliseconds**, so any test sequenced on fixed timers will lie. Drive test steps off `open` events, not `setTimeout`. That the delay was itself the bug being hunted made it worse — the test was built on the assumption the measurement later destroyed.
 
+### Published 2026-09-20 12:52
+
+First publish since 2024-02-04. Verified from outside afterwards rather than assumed:
+
+```
+http://knx.tymy.sk/     200, Last-Modified today 12:52
+references              index-YioxuZ8Q.js, index-3ynvU1oQ.css
+local dist/assets       the same two files
+both assets             200, 32.5 kB and 5.0 kB
+sw.js                   200, today 12:52
+```
+
+The bundle was checked for markers of the new build — `knxrpi.lan`, `HEALTH`, `derivedFrom`, `activeScene`, `Okruhy` — because a matching filename only proves the index was uploaded, not the files it points at.
+
+Note for next time: the site is reached over plain HTTP on purpose, so fetching it from the agent's own shell is blocked by tooling here. The check ran through the sandboxed executor instead.
+
 ### What was done here
 
 - **Inbound messages are parsed.** The text protocol fills a `stateStore`, so the buttons show what the lights are actually doing — including changes made from the wall panel or Companion. Previously every message from the bus was discarded as "No json".

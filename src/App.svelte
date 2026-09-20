@@ -217,14 +217,18 @@
 {/if}
 
 {#if status !== "connected"}
-  <div class="status">{status}</div>
-{:else}
-  <h2>Scény</h2>
+  <div class="offline">
+    {status === "connecting" ? "Pripája sa…" : "Bez spojenia s bridgeom"}
+  </div>
+{/if}
+
+<h2>Scény</h2>
   <div class="scenes">
     {#each scenes as scene (scene.name)}
       <button
         on:click={onScene}
         value={"SCENE " + scene.name}
+        disabled={status !== "connected"}
         class:active={state.activeScene === scene.value}
       >
         {scene.title}
@@ -242,6 +246,7 @@
         <button
           on:click={onSendMessage}
           value={"ADDR " + command.path + " 0"}
+          disabled={status !== "connected"}
           class="off"
           class:active={state[command.name]?.value === "0"}
         >
@@ -251,6 +256,7 @@
         <button
           on:click={onSendMessage}
           value={"ADDR " + command.path + " 1"}
+          disabled={status !== "connected"}
           class="on"
           class:active={state[command.name]?.value === "1"}
         >
@@ -259,7 +265,6 @@
       </div>
     {/each}
   </div>
-{/if}
 
 <style>
   header {
@@ -346,10 +351,19 @@
     color: var(--text-2);
   }
 
-  .status {
-    font-size: 0.85em;
-    color: var(--text-2);
-    padding: 0.9em 0;
+  /* Losing the connection used to blank the whole interface and leave a
+     single word, so the operator lost every bit of context mid-programme and
+     got a jump back when it returned. The layout stays; the controls simply
+     stop being pressable and a banner says why. */
+  .offline {
+    background: rgba(239, 83, 80, 0.14);
+    box-shadow: inset 0 0 0 1px rgba(239, 83, 80, 0.3);
+    color: var(--text);
+    border-radius: var(--r-sm);
+    padding: 0.75em 1em;
+    margin-bottom: 1.5em;
+    font-size: 0.9em;
+    font-weight: 600;
   }
 
   /* --- scenes: the primary control ------------------------------------ */
@@ -377,8 +391,13 @@
       transform 0.08s ease;
   }
 
-  .scenes button:active {
+  .scenes button:active:not(:disabled) {
     transform: scale(0.97);
+  }
+
+  .scenes button:disabled,
+  .circuit button:disabled {
+    cursor: default;
   }
 
   .scenes button.active {
@@ -437,7 +456,7 @@
       transform 0.08s ease;
   }
 
-  .circuit button:active {
+  .circuit button:active:not(:disabled) {
     transform: scale(0.95);
   }
 

@@ -61,6 +61,10 @@ Do not simply hardcode the address — that trades a slow connection for one tha
 | Wrote a commit message with `git commit -m "... backticked words ..."` | The shell ran them as commands. Two words vanished from the message and the terminal reported `command not found`. Backticks inside double quotes are command substitution | Use `git commit -F -` with a quoted heredoc, which is what every other commit today used. The warning was already on screen — `command not found: scene` — and was nearly scrolled past |
 | Reported that a second WebSocket client "received 0 state messages", and treated it as the replay feature failing | The client had never connected. Its `open` event was missing from the output entirely, and the bridge's own log showed all three clients connecting and all three being served | Look for the connect event before judging what arrived after it. The test used fixed timers, and connections here took five seconds because of the `.local` lookup, so the steps ran out of order |
 
+| Ran a scripted edit that printed "hotovo" and moved on. The change was never applied - the replacement string had three tabs of indentation where the file has two | Only caught because the commit afterwards said "nothing to commit, working tree clean". Without that line a silent no-op would have shipped as a finished feature | The script must verify and exit non-zero, not print success unconditionally. Every scripted edit since asserts the result is present before reporting |
+
+The third is the worst of the three, because it fails quietly: a wrong claim gets argued with, a no-op just sits there looking done.
+
 The second one has a reusable lesson for this project specifically: **connections take seconds, not milliseconds**, so any test sequenced on fixed timers will lie. Drive test steps off `open` events, not `setTimeout`. That the delay was itself the bug being hunted made it worse — the test was built on the assumption the measurement later destroyed.
 
 ### State of this repository

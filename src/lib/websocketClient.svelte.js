@@ -159,6 +159,14 @@ async function onMessage(evt) {
 			...state,
 			[name.toLowerCase()]: { type: type.toLowerCase(), value: value },
 		};
+		// Live, a circuit changing means the room no longer matches whatever
+		// scene was recalled, so the highlight goes with it. Only once past the
+		// replay window: during a replay every message arrives at once, so
+		// arrival order means nothing, and the bridge has already made this
+		// decision properly using the timestamps it holds.
+		if (type === "SWITCH" && get(liveStore)) {
+			delete next.activeScene;
+		}
 		if (type === "SCENE") {
 			// Which scene is active is tracked by VALUE, not by name, and that
 			// is deliberate. Each scene has its own group address, but 1/0/0 is

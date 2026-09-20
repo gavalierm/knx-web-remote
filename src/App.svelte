@@ -140,6 +140,24 @@
     { title: "Sála", path: "0/3/0", name: "sala" },
     { title: "Pódium", path: "0/4/0", name: "podium" },
   ];
+
+  // The scenes are what the hall actually runs on - the crew moves between
+  // these during a programme, from the Streamdeck and from the wall panel,
+  // far more often than they touch a single circuit. The bridge has known
+  // them all along; this app did not show them at all.
+  //
+  // `value` is what identifies the scene coming back from the bus; see the
+  // note in websocketClient.svelte.js about why name matching does not work.
+  let scenes = [
+    { title: "Úvod", name: "uvod", value: "0" },
+    { title: "Chvály", name: "chvaly", value: "1" },
+    { title: "Kázeň", name: "kazen", value: "2" },
+  ];
+
+  function onScene() {
+    if (this.value == undefined) return;
+    sendMessage(this.value);
+  }
 </script>
 
 <header>
@@ -200,6 +218,18 @@
 {#if status !== "connected"}
   <div class="status">{status}</div>
 {:else}
+  <div class="scenes">
+    {#each scenes as scene (scene.name)}
+      <button
+        on:click={onScene}
+        value={"SCENE " + scene.name}
+        class:active={state.activeScene === scene.value}
+      >
+        {scene.title}
+      </button>
+    {/each}
+  </div>
+
   {#if !knowsState}
     <div class="status">čaká sa na stav zbernice</div>
   {/if}
@@ -306,6 +336,32 @@
   .status {
     font-size: 0.8em;
     text-transform: uppercase;
+  }
+
+  /* Scenes first and given room: this is the primary control during a
+     programme, and the individual circuits are the exception. */
+  .scenes {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-gap: 0.6em;
+    margin-bottom: 2.5em;
+  }
+
+  .scenes button {
+    padding: 1.1em 0.4em;
+    border: 1px solid #444;
+    border-radius: 4px;
+    background: none;
+    font-size: 0.95em;
+    transition:
+      border-color 0.15s ease,
+      background 0.15s ease;
+  }
+
+  .scenes button.active {
+    border-color: green;
+    background: rgba(0, 128, 0, 0.18);
+    font-weight: 600;
   }
 
   .buttons {

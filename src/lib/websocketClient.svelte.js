@@ -135,10 +135,26 @@ async function onMessage(evt) {
 		return;
 	}
 
-	stateStore.update((state) => ({
-		...state,
-		[name.toLowerCase()]: { type: type.toLowerCase(), value: value },
-	}));
+	stateStore.update((state) => {
+		const next = {
+			...state,
+			[name.toLowerCase()]: { type: type.toLowerCase(), value: value },
+		};
+		if (type === "SCENE") {
+			// Which scene is active is tracked by VALUE, not by name, and that
+			// is deliberate. Each scene has its own group address, but 1/0/0 is
+			// listed twice in the bridge's table - as `scene` and as `uvod` -
+			// and the first match wins, so recalling úvod arrives as
+			// "SCENE SCENE 0" and never as "SCENE UVOD 0".
+			//
+			// The value identifies the scene unambiguously (0 úvod, 1 chvály,
+			// 2 kázeň), so matching on it sidesteps the naming quirk entirely.
+			// Fixing the order in the bridge would change what it broadcasts,
+			// and that is a contract shared with Companion - see PROTOCOL.md.
+			next.activeScene = value;
+		}
+		return next;
+	});
 }
 
 // Ask the bridge how it is. Nothing reaches the KNX bus - safe at any time,

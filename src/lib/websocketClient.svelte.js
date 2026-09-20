@@ -226,10 +226,20 @@ async function onMessage(evt) {
 // So: on waking, reconnect at once if we know we are down, and if we think we
 // are up, ask a question and disbelieve the socket if nothing comes back.
 //
+let lastWakeCheck = 0;
+
 function onWake() {
 	if (typeof document !== "undefined" && document.visibilityState !== "visible") {
 		return;
 	}
+	// focus fires every time the window is clicked back into, and four events
+	// are wired to this. Without a floor, a desktop browser would probe the
+	// bridge constantly - exactly the chatter that was just taken off this
+	// channel by not multicasting HEALTH.
+	if (Date.now() - lastWakeCheck < 2000) {
+		return;
+	}
+	lastWakeCheck = Date.now();
 
 	if (getStatus() !== "connected") {
 		clearTimeout(global_connection_timer);

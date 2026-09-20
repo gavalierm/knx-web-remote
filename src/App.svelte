@@ -2,11 +2,14 @@
   //
   //
   import { onMount } from "svelte";
+  import { onDestroy } from "svelte";
   import {
     connect,
     sendMessage,
     statusStore,
     stateStore,
+    healthStore,
+    requestHealth,
   } from "./lib/websocketClient.svelte.js";
   //
   import NoSleep from "@zakj/no-sleep";
@@ -32,6 +35,40 @@
   // that look authoritative. It replays what it knows the moment we connect,
   // so this is usually empty only for a moment after a bridge restart.
   $: knowsState = Object.keys(state).length > 0;
+  $: health = $healthStore;
+
+  // The status panel. Collapsed by default - during an event the buttons are
+  // what matters. While it is open the bridge is asked every five seconds;
+  // HEALTH puts nothing on the KNX bus, so this is safe at any time.
+  let showStatus = false;
+  let healthTimer = null;
+
+  function toggleStatus() {
+    showStatus = !showStatus;
+    clearInterval(healthTimer);
+    if (showStatus) {
+      requestHealth();
+      healthTimer = setInterval(requestHealth, 5000);
+    }
+  }
+
+  onDestroy(() => clearInterval(healthTimer));
+
+  function humanUptime(seconds) {
+    const s = Number(seconds);
+    if (!isFinite(s) || s < 0) return "?";
+    if (s < 60) return s + " s";
+    if (s < 3600) return Math.floor(s / 60) + " min";
+    if (s < 86400) return Math.floor(s / 3600) + " h";
+    return Math.floor(s / 86400) + " d";
+  }
+
+  // -1 from the bridge means "cannot determine", which is not the same as no.
+  function flag(value) {
+    if (value === undefined) return { text: "?", ok: null };
+    if (value === "-1") return { text: "nezistené", ok: null };
+    return value === "1" ? { text: "áno", ok: true } : { text: "nie", ok: false };
+  }
 
   async function requestNotificationPermission() {
     const permission = await Notification.requestPermission();
@@ -105,7 +142,61 @@
   ];
 </script>
 
-<h1>Svetlá</h1>
+<header>
+  <h1>Svetlá</h1>
+  <button
+    class="hamburger"
+    class:open={showStatus}
+    on:click={toggleStatus}
+    aria-expanded={showStatus}
+    aria-label="Stav systému"
+  >
+    <span></span><span></span><span></span>
+  </button>
+</header>
+
+{#if showStatus}
+  <div class="panel">
+    {#if status !== "connected"}
+      <div class="row"><span>Spojenie</span><b class="bad">{status}</b></div>
+    {:else if !health}
+      <div class="row"><span>Stav</span><b>zisťuje sa…</b></div>
+    {:else}
+      {@const knxd = flag(health.knxd)}
+      {@const listener = flag(health.listener)}
+      {@const usb = flag(health.usb)}
+      <div class="row"><span>Spojenie na bridge</span><b class="good">áno</b></div>
+      <div class="row">
+        <span>Spojenie na knxd</span>
+        <b class:good={knxd.ok === true} class:bad={knxd.ok === false}>{knxd.text}</b>
+      </div>
+      <div class="row">
+        <span>Odber zbernice</span>
+        <b class:good={listener.ok === true} class:bad={listener.ok === false}>{listener.text}</b>
+      </div>
+      <div class="row">
+        <span>USB rozhranie KNX</span>
+        <b class:good={usb.ok === true} class:bad={usb.ok === false}>{usb.text}</b>
+      </div>
+      <div class="row">
+        <span>Posledný telegram</span>
+        <b>{health.lastbus === "-1" ? "zatiaľ žiadny" : humanUptime(health.lastbus) + " dozadu"}</b>
+      </div>
+      <div class="row"><span>Bridge beží</span><b>{humanUptime(health.uptime)}</b></div>
+      <div class="row"><span>Pripojení klienti</span><b>{health.clients ?? "?"}</b></div>
+      <div class="row">
+        <span>Známy stav</span>
+        <b>{health.known ?? "?"} z {health.addresses ?? "?"} adries</b>
+      </div>
+      <p class="note">
+        Neznámy stav neznamená vypnuté. Zbernica na tejto inštalácii
+        neodpovedá na dopyt, takže bridge sa stav dozvie až keď niekto
+        okruh prepne.
+      </p>
+    {/if}
+  </div>
+{/if}
+
 {#if status !== "connected"}
   <div class="status">{status}</div>
 {:else}
@@ -138,10 +229,78 @@
 {/if}
 
 <style type="text/css">
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 3em;
+  }
+
   h1 {
     text-transform: uppercase;
     font-size: 1em;
-    margin-bottom: 4em;
+    margin: 0;
+  }
+
+  /* Deliberately small and quiet. During an event the buttons are what
+     matters; the status panel is for when something is wrong. */
+  .hamburger {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    padding: 0.6em;
+    background: none;
+    border: 1px solid #444;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .hamburger span {
+    display: block;
+    width: 18px;
+    height: 2px;
+    background: currentColor;
+    transition: opacity 0.15s ease;
+  }
+
+  .hamburger.open span:nth-child(2) {
+    opacity: 0.25;
+  }
+
+  .panel {
+    border: 1px solid #444;
+    border-radius: 4px;
+    padding: 0.6em 0.9em;
+    margin-bottom: 2em;
+    font-size: 0.85em;
+    text-align: left;
+  }
+
+  .panel .row {
+    display: flex;
+    justify-content: space-between;
+    gap: 1em;
+    padding: 0.35em 0;
+    border-bottom: 1px solid #2a2a2a;
+  }
+
+  .panel .row:last-of-type {
+    border-bottom: none;
+  }
+
+  .panel .good {
+    color: green;
+  }
+
+  .panel .bad {
+    color: red;
+  }
+
+  .panel .note {
+    margin: 0.8em 0 0.2em;
+    opacity: 0.6;
+    line-height: 1.4;
   }
 
   .status {

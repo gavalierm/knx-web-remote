@@ -74,6 +74,14 @@ It now parses the text protocol into `stateStore` (`{ sala: { type: 'switch', va
 
 `commands` entries carry a `name` that must match the bridge's translator key — that is what bus state arrives under.
 
+### The status panel
+
+Behind the hamburger in the header, collapsed by default — during an event the buttons are what matter. Opening it sends `HEALTH` to the bridge and repeats every five seconds while open; the interval is cleared on close and on destroy. `HEALTH` puts nothing on the KNX bus, so it is safe at any time, including during a programme.
+
+It exists because the app could otherwise only tell whether **its own socket** was open, and that socket stays up perfectly well while knxd is dead or the bus is unreachable — the "it says connected but nothing works" case.
+
+Three states, never two: a value of `-1` from the bridge means *cannot determine* and is shown as "nezistené", not as "no". The panel also says plainly that an unknown circuit is unknown rather than off, because on this installation the bus does not answer read requests — see `../knx_usb_ws/MAINTENANCE.md`.
+
 **Wake lock is disabled.** `@zakj/no-sleep` is the only runtime dependency and the whole wake-lock path exists, but `noSleep.enable()` is commented out, leaving only `console.warn("Enable NoSleep")`. The screen therefore sleeps mid-event. Commit `60980c9 StayAwake` stopped halfway.
 
 **Notification / Badging permission is requested and then unused.** `checkNotificationPermission` asks the user, and both branches are empty apart from a comment.

@@ -14,6 +14,14 @@ export const statusStore = writable('disconnected');
 // immediately rather than waiting for someone to press something.
 export const stateStore = writable({});
 
+// What the bridge says about itself, from the HEALTH query:
+//   { knxd: '1', listener: '1', usb: '1', clients: '2', uptime: '3600', ... }
+//
+// Without this the app can only tell whether its own socket is open - and that
+// socket stays up perfectly well while knxd is dead or the bus is unreachable,
+// which is exactly how "it says connected but nothing works" happens.
+export const healthStore = writable(null);
+
 let global_warr_timer;
 let global_connection_timer;
 
@@ -78,6 +86,7 @@ async function onClose() {
 	// connection dropped is exactly the stale-display problem being fixed here:
 	// the bridge replays the current state as soon as we reconnect.
 	stateStore.set({});
+	healthStore.set(null);
 	//disconnected();
 	clearTimeout(global_connection_timer);
 	global_connection_timer = setTimeout(function() {
@@ -111,6 +120,16 @@ async function onMessage(evt) {
 	}
 
 	const [type, name, value] = parts;
+
+	if (type === "HEALTH") {
+		healthStore.update((health) => ({
+			...(health || {}),
+			[name.toLowerCase()]: value,
+			at: Date.now(),
+		}));
+		return;
+	}
+
 	if (type !== "SWITCH" && type !== "SCENE") {
 		if (LOGGING) console.log("Unknown message type:", raw);
 		return;
@@ -121,6 +140,12 @@ async function onMessage(evt) {
 		[name.toLowerCase()]: { type: type.toLowerCase(), value: value },
 	}));
 }
+
+// Ask the bridge how it is. Nothing reaches the KNX bus - safe at any time,
+// including during a programme. See PROTOCOL.md in the knx-usb-ws repository.
+export const requestHealth = () => {
+	sendMessage("HEALTH");
+};
 
 export const sendMessage = (message) => {
 	//console.log(remoteWebSocket, getStatus())

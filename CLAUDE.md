@@ -92,6 +92,12 @@ Before 2026-09-20 that file was the Vite template's: dark values on `:root`, imm
 
 **Buttons carry no border.** That something is pressable is implicit, and a rim inside an already-framed row is a box in a box. Resting state is a surface; the active one is filled solid. A circuit that is on warms its **whole row**, not just its button, so which lights are live reads at a glance from across the hall. The scene in effect glows. Sections are titled (`Scény`, `Okruhy`) — without headings a row of three unlabelled buttons says nothing about what it controls.
 
+### Central has no state of its own
+
+It is a group command: it sends off to everything below it and has no status object, so the bus never reports anything for it. Its state is **derived** here — if any circuit it governs is lit, central is on; when all are off, it is off; when none is known, it shows as unknown.
+
+The bridge deliberately does not do this. Deriving it there would mean inventing a telegram the bus never carried, and everything the bridge reports is something it actually saw. Before this, central's cached value was the last command sent, so the app could say "Central: off" with three circuits lit.
+
 ### Scenes are blue, circuits are amber
 
 Two accents on purpose. A circuit is a lamp and amber says so; a scene is a choice about the whole room, not a lamp, and one accent for both made them read as the same kind of control.

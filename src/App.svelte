@@ -35,6 +35,22 @@
   // that look authoritative. It replays what it knows the moment we connect,
   // so this is usually empty only for a moment after a bridge restart.
   $: knowsState = Object.keys(state).length > 0;
+
+  // Recomputed whenever the bus state changes. Written as a map rather than a
+  // function called from the markup, so Svelte can see it depends on `state`.
+  $: values = Object.fromEntries(
+    commands.map((command) => {
+      if (!command.derivedFrom) {
+        return [command.name, state[command.name] && state[command.name].value];
+      }
+      const known = command.derivedFrom.filter(
+        (name) => state[name] && state[name].value !== undefined,
+      );
+      if (!known.length) return [command.name, undefined];
+      const anyOn = known.some((name) => state[name].value === "1");
+      return [command.name, anyOn ? "1" : "0"];
+    }),
+  );
   $: health = $healthStore;
   $: live = $liveStore;
 
@@ -153,7 +169,16 @@
   // key the bus state arrives under (SWITCH SALA 1). This table is a duplicate
   // of the bridge's and has already drifted from it once; see CLAUDE.md.
   let commands = [
-    { title: "Central", path: "0/0/1", name: "central" },
+    // Central is a group command: it sends off to everything below it, and it
+    // has no status object of its own. Its state is therefore derived - if
+    // anything it governs is lit, central is on. The bridge cannot do this,
+    // because that would mean inventing a telegram the bus never carried.
+    {
+      title: "Central",
+      path: "0/0/1",
+      name: "central",
+      derivedFrom: ["schody", "zvukari", "sala", "podium"],
+    },
     { title: "Schody", path: "0/1/0", name: "schody" },
     { title: "Zvukári", path: "0/2/0", name: "zvukari" },
     { title: "Sála", path: "0/3/0", name: "sala" },
@@ -263,13 +288,13 @@
   </h2>
   <div class="circuits">
     {#each commands as command (command.name)}
-      <div class="circuit" class:lit={state[command.name]?.value === "1"}>
+      <div class="circuit" class:lit={values[command.name] === "1"}>
         <button
           on:click={onSendMessage}
           value={"ADDR " + command.path + " 0"}
           disabled={status !== "connected"}
           class="off"
-          class:active={state[command.name]?.value === "0"}
+          class:active={values[command.name] === "0"}
         >
           Vyp
         </button>
@@ -279,7 +304,7 @@
           value={"ADDR " + command.path + " 1"}
           disabled={status !== "connected"}
           class="on"
-          class:active={state[command.name]?.value === "1"}
+          class:active={values[command.name] === "1"}
         >
           Zap
         </button>

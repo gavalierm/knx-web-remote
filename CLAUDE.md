@@ -82,6 +82,10 @@ Scenes come first and are given room. The crew moves between úvod, chvály and 
 
 A circuit whose state the bridge does not know is shown with its name dimmed. Quietly saying "unknown" beats implying "off" — and on this installation unknown is the normal state after a restart, because the bus does not answer read requests.
 
+**The app runs on a white background.** `src/app.css` declares dark values on `:root` and then `body` overrides them with `background: white; color: black`. Style against the light theme; the `:root` block is misleading left-over template code.
+
+**Buttons carry no border.** That something is pressable is implicit, and a rim inside an already-framed row is a box in a box. Resting state is a light surface, the active one is filled solid with white text so it reads across a dark hall at arm's length. Sections are titled (`Scény`, `Okruhy`) — without headings a row of three unlabelled buttons says nothing about what it controls.
+
 ### The status panel
 
 Behind the hamburger in the header, collapsed by default — during an event the buttons are what matter. Opening it sends `HEALTH` to the bridge and repeats every five seconds while open; the interval is cleared on close and on destroy. `HEALTH` puts nothing on the KNX bus, so it is safe at any time, including during a programme.

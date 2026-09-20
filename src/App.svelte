@@ -1,8 +1,7 @@
 <script type="text/javascript">
   //
   //
-  import { onMount } from "svelte";
-  import { onDestroy } from "svelte";
+  import { onMount, onDestroy } from "svelte";
   import {
     connect,
     sendMessage,
@@ -123,7 +122,6 @@
   });
 
   function onSendMessage() {
-    console.log(this, this.value);
     if (this.value == undefined) {
       return;
     }
@@ -218,6 +216,7 @@
 {#if status !== "connected"}
   <div class="status">{status}</div>
 {:else}
+  <h2>Scény</h2>
   <div class="scenes">
     {#each scenes as scene (scene.name)}
       <button
@@ -230,6 +229,7 @@
     {/each}
   </div>
 
+  <h2>Okruhy</h2>
   {#if !knowsState}
     <div class="status">čaká sa na stav zbernice</div>
   {/if}
@@ -281,10 +281,10 @@
     flex-direction: column;
     justify-content: center;
     gap: 4px;
-    padding: 0.6em;
-    background: none;
-    border: 1px solid #444;
-    border-radius: 4px;
+    padding: 0.7em;
+    background: #f0f0f0;
+    border: none;
+    border-radius: 6px;
     cursor: pointer;
   }
 
@@ -301,8 +301,8 @@
   }
 
   .panel {
-    border: 1px solid #444;
-    border-radius: 4px;
+    background: #f6f6f6;
+    border-radius: 6px;
     padding: 0.6em 0.9em;
     margin-bottom: 2em;
     font-size: 0.85em;
@@ -314,7 +314,7 @@
     justify-content: space-between;
     gap: 1em;
     padding: 0.35em 0;
-    border-bottom: 1px solid #2a2a2a;
+    border-bottom: 1px solid #e4e4e4;
   }
 
   .panel .row:last-of-type {
@@ -327,6 +327,16 @@
 
   .panel .bad {
     color: red;
+  }
+
+  h2 {
+    font-size: 0.75em;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    opacity: 0.45;
+    font-weight: 600;
+    margin: 0 0 0.7em;
+    text-align: left;
   }
 
   .panel .note {
@@ -349,20 +359,26 @@
     margin-bottom: 2.5em;
   }
 
+  /* No borders on the buttons themselves - that something is pressable is
+     implicit, and a rim inside a framed row is a box in a box. A surface
+     carries it, and the active one is filled properly so it reads across a
+     dark hall at arm's length. */
   .scenes button {
     padding: 1.1em 0.4em;
-    border: 1px solid #444;
-    border-radius: 4px;
-    background: none;
+    border: none;
+    border-radius: 6px;
+    background: #f0f0f0;
+    color: inherit;
     font-size: 0.95em;
+    cursor: pointer;
     transition:
-      border-color 0.15s ease,
-      background 0.15s ease;
+      background 0.15s ease,
+      color 0.15s ease;
   }
 
   .scenes button.active {
-    border-color: green;
-    background: rgba(0, 128, 0, 0.18);
+    background: #1f7a33;
+    color: #fff;
     font-weight: 600;
   }
 
@@ -381,9 +397,9 @@
     grid-template-columns: 4.5em 1fr 4.5em;
     align-items: center;
     gap: 0.6em;
-    border: 1px solid #333;
-    border-radius: 4px;
-    padding: 0.4em;
+    background: #fafafa;
+    border-radius: 6px;
+    padding: 0.35em;
   }
 
   .circuit .name {
@@ -399,24 +415,26 @@
 
   .circuit button {
     padding: 0.9em 0.3em;
-    border: 1px solid #444;
-    border-radius: 3px;
-    background: none;
+    border: none;
+    border-radius: 5px;
+    background: #ececec;
+    color: inherit;
     font-size: 0.85em;
+    cursor: pointer;
     transition:
-      border-color 0.15s ease,
-      background 0.15s ease;
+      background 0.15s ease,
+      color 0.15s ease;
   }
 
   .circuit button.off.active {
-    border-color: #b00;
-    background: rgba(187, 0, 0, 0.18);
+    background: #b02020;
+    color: #fff;
     font-weight: 600;
   }
 
   .circuit button.on.active {
-    border-color: green;
-    background: rgba(0, 128, 0, 0.18);
+    background: #1f7a33;
+    color: #fff;
     font-weight: 600;
   }
 </style>

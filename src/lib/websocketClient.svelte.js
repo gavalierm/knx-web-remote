@@ -29,6 +29,11 @@ export const healthStore = writable(null);
 export const liveStore = writable(false);
 let connectedAt = 0;
 const REPLAY_WINDOW_MS = 1500;
+// How long after a scene its own circuit reports keep arriving. Measured on
+// this bus: 350 ms. Two seconds leaves room and still separates a scene's side
+// effects from an unrelated change.
+const SCENE_GRACE_MS = 2000;
+let lastSceneAt = 0;
 
 let global_warr_timer;
 let global_connection_timer;
@@ -159,15 +164,28 @@ async function onMessage(evt) {
 			...state,
 			[name.toLowerCase()]: { type: type.toLowerCase(), value: value },
 		};
-		// Live, a circuit changing means the room no longer matches whatever
-		// scene was recalled, so the highlight goes with it. Only once past the
-		// replay window: during a replay every message arrives at once, so
-		// arrival order means nothing, and the bridge has already made this
-		// decision properly using the timestamps it holds.
-		if (type === "SWITCH" && get(liveStore)) {
+		// A circuit changing on its own means the room no longer matches the
+		// scene that was recalled, so the highlight goes with it.
+		//
+		// But a scene switches circuits itself and the actuators report it,
+		// within about 350 ms on this bus, so those reports must not cancel the
+		// scene that caused them. Anything arriving more than two seconds after
+		// the scene is somebody else's doing.
+		//
+		// Only past the replay window: during a replay every message arrives at
+		// once, arrival order says nothing, and the bridge has already decided
+		// this from the timestamps it holds.
+		if (
+			type === "SWITCH" &&
+			get(liveStore) &&
+			Date.now() - lastSceneAt > SCENE_GRACE_MS
+		) {
 			delete next.activeScene;
 		}
 		if (type === "SCENE") {
+			// Remember when, so the circuit reports this scene is about to
+			// cause are not mistaken for somebody overriding it.
+			lastSceneAt = Date.now();
 			// Which scene is active is tracked by VALUE, not by name, and that
 			// is deliberate. Each scene has its own group address, but 1/0/0 is
 			// listed twice in the bridge's table - as `scene` and as `uvod` -

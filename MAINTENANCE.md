@@ -60,22 +60,24 @@ Do not simply hardcode the address — that trades a slow connection for one tha
 | Passed source to the Svelte autofixer with HTML-escaped angle brackets (`&lt;script&gt;`). It returned a JavaScript parse error, which reads like a fault in the code | The code was fine. Tool parameters take **raw source**, never HTML-escaped text — the escaping was introduced while composing the call | Read the error literally: a parse failure at line 8 column 2 of a file that had just built cleanly points at the input, not the source |
 | Wrote a commit message with `git commit -m "... backticked words ..."` | The shell ran them as commands. Two words vanished from the message and the terminal reported `command not found`. Backticks inside double quotes are command substitution | Use `git commit -F -` with a quoted heredoc, which is what every other commit today used. The warning was already on screen — `command not found: scene` — and was nearly scrolled past |
 | Reported that a second WebSocket client "received 0 state messages", and treated it as the replay feature failing | The client had never connected. Its `open` event was missing from the output entirely, and the bridge's own log showed all three clients connecting and all three being served | Look for the connect event before judging what arrived after it. The test used fixed timers, and connections here took five seconds because of the `.local` lookup, so the steps ran out of order |
+| Ran a scripted edit that printed "hotovo" and moved on | The change was never applied — the replacement string had three tabs of indentation where the file has two. Caught only because the commit afterwards said "nothing to commit, working tree clean" | A scripted edit has to assert its own result and fail loudly, not print success unconditionally. Every one since checks the change is present before reporting |
 
-| Ran a scripted edit that printed "hotovo" and moved on. The change was never applied - the replacement string had three tabs of indentation where the file has two | Only caught because the commit afterwards said "nothing to commit, working tree clean". Without that line a silent no-op would have shipped as a finished feature | The script must verify and exit non-zero, not print success unconditionally. Every scripted edit since asserts the result is present before reporting |
+The last is the worst of them, because it fails quietly: a wrong claim gets argued with, a no-op just sits there looking finished.
 
-The third is the worst of the three, because it fails quietly: a wrong claim gets argued with, a no-op just sits there looking done.
+The connection-timing one has a reusable lesson for this project specifically: **connections take seconds, not milliseconds**, so any test sequenced on fixed timers will lie. Drive test steps off `open` events, not `setTimeout`. That the delay was itself the bug being hunted made it worse — the test was built on the assumption the measurement later destroyed.
 
-The second one has a reusable lesson for this project specifically: **connections take seconds, not milliseconds**, so any test sequenced on fixed timers will lie. Drive test steps off `open` events, not `setTimeout`. That the delay was itself the bug being hunted made it worse — the test was built on the assumption the measurement later destroyed.
+### What was done here
 
-### State of this repository
+- **Inbound messages are parsed.** The text protocol fills a `stateStore`, so the buttons show what the lights are actually doing — including changes made from the wall panel or Companion. Previously every message from the bus was discarded as "No json".
+- **Scenes are shown at all**, which they never were, and tracked by value rather than name to sidestep the bridge's duplicate `1/0/0` entry.
+- **A status panel** behind the hamburger, fed by the new `HEALTH` query, so the app can say whether knxd and the bus are alive rather than only whether its own socket is open.
+- **The host moved to `knxrpi.lan`**, removing a five-second wait from every connection.
+- **The interface was redesigned** — dark, warm amber for circuits, blue for scenes, app-like touch behaviour. See `CLAUDE.md` for why dark is a functional choice here.
+- **Two layout shifts removed**: the waiting note moved into the heading, and losing the connection no longer blanks the whole screen.
 
-Untouched so far in this maintenance work. All effort went to the bridge, where both causes of the recurring outage were. Known defects, unchanged and documented in `CLAUDE.md`:
+Still open, unchanged from the start of the day:
 
-- `onMessage` parses inbound frames as JSON, but the bridge sends plain text, so **every message from the bus is discarded**. The buttons are blind, and the connection indicator reports only whether this app's own socket is open — it says "connected" while the bus is dead.
 - `noSleep.enable()` is commented out; the screen sleeps during an event.
-- The address table is duplicated here and has drifted from the bridge's: five switches, none of the scenes.
+- The address table is duplicated from the bridge's and has to be kept in step by hand.
 - Dead jQuery code in `src/lib/htmlHelper.js`.
-
-### Next
-
-Bridge-side work is in progress to cache bus state and replay it to a client when it connects, so any client — this app and Companion alike — shows the truth immediately instead of waiting for the next telegram. Once that lands, fixing `onMessage` here turns this app from blind buttons into a real remote.
+- Nothing has been published yet — the live site still serves the February 2024 build.

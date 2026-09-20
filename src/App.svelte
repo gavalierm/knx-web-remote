@@ -8,6 +8,7 @@
     statusStore,
     stateStore,
     healthStore,
+    liveStore,
     requestHealth,
   } from "./lib/websocketClient.svelte.js";
   //
@@ -35,6 +36,26 @@
   // so this is usually empty only for a moment after a bridge restart.
   $: knowsState = Object.keys(state).length > 0;
   $: health = $healthStore;
+  $: live = $liveStore;
+
+  // What the heading says about how current the picture is. The bridge remembers
+  // state across restarts, so a client can be shown something the moment it
+  // opens - but a remembered value must never be presented as a live one. Once
+  // the bus actually says something, the qualifier goes away.
+  $: stateNote = (() => {
+    if (!knowsState) return "čaká sa na stav";
+    if (live) return "";
+    const age = Number(health && health.stateage);
+    if (!isFinite(age) || age < 0) return "";
+    if (age < 12 * 3600) {
+      const at = new Date(Date.now() - age * 1000);
+      return (
+        "stav z " +
+        at.toLocaleTimeString("sk-SK", { hour: "2-digit", minute: "2-digit" })
+      );
+    }
+    return "stav spred " + humanUptime(age);
+  })();
 
   // The status panel. Collapsed by default - during an event the buttons are
   // what matters. While it is open the bridge is asked every five seconds;
@@ -238,7 +259,7 @@
 
   <h2>
     <span>Okruhy</span>
-    {#if !knowsState}<span class="hint">čaká sa na stav</span>{/if}
+    {#if stateNote}<span class="hint">{stateNote}</span>{/if}
   </h2>
   <div class="circuits">
     {#each commands as command (command.name)}
@@ -401,9 +422,9 @@
   }
 
   .scenes button.active {
-    background: var(--lit);
-    color: #241a08;
-    box-shadow: 0 0 22px var(--lit-glow);
+    background: var(--scene);
+    color: #06142e;
+    box-shadow: 0 0 22px var(--scene-glow);
   }
 
   /* --- circuits -------------------------------------------------------- */

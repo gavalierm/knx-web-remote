@@ -92,6 +92,16 @@ Before 2026-09-20 that file was the Vite template's: dark values on `:root`, imm
 
 **Buttons carry no border.** That something is pressable is implicit, and a rim inside an already-framed row is a box in a box. Resting state is a surface; the active one is filled solid. A circuit that is on warms its **whole row**, not just its button, so which lights are live reads at a glance from across the hall. The scene in effect glows. Sections are titled (`Scény`, `Okruhy`) — without headings a row of three unlabelled buttons says nothing about what it controls.
 
+### Scenes are blue, circuits are amber
+
+Two accents on purpose. A circuit is a lamp and amber says so; a scene is a choice about the whole room, not a lamp, and one accent for both made them read as the same kind of control.
+
+### Showing state without pretending
+
+The bridge remembers bus state across restarts, so something is on screen the moment the app opens instead of after a wait that can run to hours. A remembered value must never be presented as a live one, so the heading carries the qualifier: `stav z 08:51`, or `stav spred 2 d` past twelve hours.
+
+`liveStore` decides which it is. The bridge replays what it remembers the instant a client connects, so anything arriving in the first 1.5 s is a memory; anything later is the bus actually doing something, and the qualifier disappears. `HEALTH` is requested on connect, not just when the panel opens, because that is where `STATEAGE` comes from.
+
 ### The status panel
 
 Behind the hamburger in the header, collapsed by default — during an event the buttons are what matter. Opening it sends `HEALTH` to the bridge and repeats every five seconds while open; the interval is cleared on close and on destroy. `HEALTH` puts nothing on the KNX bus, so it is safe at any time, including during a programme.

@@ -22,6 +22,14 @@ export const stateStore = writable({});
 // which is exactly how "it says connected but nothing works" happens.
 export const healthStore = writable(null);
 
+// Whether anything has been heard from the bus since this connection opened.
+// The bridge replays what it remembers the instant a client connects, so a
+// message arriving in that first moment is a memory, not an event. Anything
+// later is the bus actually doing something.
+export const liveStore = writable(false);
+let connectedAt = 0;
+const REPLAY_WINDOW_MS = 1500;
+
 let global_warr_timer;
 let global_connection_timer;
 
@@ -63,10 +71,16 @@ export function connect() {
 }
 
 async function onOpen() {
-	//connected();
 	console.log("Open");
 	setStatus('connected');
 	clearTimeout(global_connection_timer);
+	connectedAt = Date.now();
+	liveStore.set(false);
+	// Ask straight away, not only when the status panel is opened. The answer
+	// carries STATEAGE, which is what tells us whether the state the bridge
+	// just replayed is current or was restored from disk after a restart.
+	// Nothing reaches the KNX bus.
+	requestHealth();
 	//remoteWebSocket.send('{"action":"authenticate","protocol":"701","password":"' + localStorage.getItem("_pass") + '"}');
 }
 
@@ -87,6 +101,7 @@ async function onClose() {
 	// the bridge replays the current state as soon as we reconnect.
 	stateStore.set({});
 	healthStore.set(null);
+	liveStore.set(false);
 	//disconnected();
 	clearTimeout(global_connection_timer);
 	global_connection_timer = setTimeout(function() {
@@ -133,6 +148,10 @@ async function onMessage(evt) {
 	if (type !== "SWITCH" && type !== "SCENE") {
 		if (LOGGING) console.log("Unknown message type:", raw);
 		return;
+	}
+
+	if (Date.now() - connectedAt > REPLAY_WINDOW_MS) {
+		liveStore.set(true);
 	}
 
 	stateStore.update((state) => {

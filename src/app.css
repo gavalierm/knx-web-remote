@@ -20,9 +20,16 @@
      and weight, never from fading text out. */
   --text-2: #a7aeb9;
 
+  /* Amber for circuits: these are lamps, and the colour says so. */
   --lit: #ffb340;
   --lit-soft: rgba(255, 179, 64, 0.14);
   --lit-glow: rgba(255, 179, 64, 0.28);
+
+  /* Blue for scenes, deliberately a different family. A scene is not a lamp -
+     it is a choice about the whole room - and using one accent for both made
+     them read as the same kind of control. */
+  --scene: #4c8dff;
+  --scene-glow: rgba(76, 141, 255, 0.3);
 
   --dark: #6b7480;
   --bad: #ef5350;

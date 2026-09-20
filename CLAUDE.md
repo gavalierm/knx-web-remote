@@ -80,7 +80,9 @@ One circuit is one thing with two states, so it gets **one** name: Vyp on the le
 
 Scenes come first and are given room. The crew moves between úvod, chvály and kázeň constantly during a programme; individual circuits are the exception, not the rule.
 
-A circuit whose state the bridge does not know is shown with its name dimmed. Quietly saying "unknown" beats implying "off" — and on this installation unknown is the normal state after a restart, because the bus does not answer read requests.
+A circuit whose state the bridge does not know needs no special mark: when **neither** button is filled, that is what unknown looks like. On this installation unknown is the normal state after a restart, because the bus does not answer read requests.
+
+**Never mute text to convey state.** An earlier version dimmed the circuit's name when its state was unknown, which traded the one thing you most need to read for something the buttons already said. Hierarchy comes from size, weight and colour — never from `opacity` on text. The only `opacity` left in the component is on a bar of the hamburger icon, which is decoration.
 
 **The app runs on a white background.** `src/app.css` declares dark values on `:root` and then `body` overrides them with `background: white; color: black`. Style against the light theme; the `:root` block is misleading left-over template code.
 

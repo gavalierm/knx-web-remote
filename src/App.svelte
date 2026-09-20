@@ -244,9 +244,7 @@
         >
           Vyp
         </button>
-        <span class="name" class:unknown={state[command.name] === undefined}>
-          {command.title}
-        </span>
+        <span class="name">{command.title}</span>
         <button
           on:click={onSendMessage}
           value={"ADDR " + command.path + " 1"}
@@ -330,18 +328,18 @@
   }
 
   h2 {
-    font-size: 0.75em;
+    font-size: 0.8em;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    opacity: 0.45;
-    font-weight: 600;
+    color: #333;
+    font-weight: 700;
     margin: 0 0 0.7em;
     text-align: left;
   }
 
   .panel .note {
     margin: 0.8em 0 0.2em;
-    opacity: 0.6;
+    color: #555;
     line-height: 1.4;
   }
 
@@ -402,15 +400,11 @@
     padding: 0.35em;
   }
 
+  /* Unknown state needs no dimming here: when neither button is filled, that
+     is what unknown looks like. The name stays fully readable either way. */
   .circuit .name {
     text-align: center;
-    font-size: 0.95em;
-  }
-
-  /* Nothing has happened on this address since the bridge started, so its
-     state is genuinely unknown. Saying so quietly beats implying it is off. */
-  .circuit .name.unknown {
-    opacity: 0.45;
+    font-size: 1em;
   }
 
   .circuit button {

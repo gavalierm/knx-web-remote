@@ -94,7 +94,14 @@ Before 2026-09-20 that file was the Vite template's: dark values on `:root`, imm
 
 ### Central has no state of its own
 
-It is a group command: it sends off to everything below it and has no status object, so the bus never reports anything for it. Its state is **derived** here — if any circuit it governs is lit, central is on; when all are off, it is off; when none is known, it shows as unknown.
+It is a group command: it sends off to everything below it and has no status object, so the bus never reports anything for it. Its state is **derived** here, and it has **three** states rather than two:
+
+| Everything below it on | `Zap` filled, row lit |
+| Everything off | `Vyp` filled |
+| Some of each | neither filled, and a count beside the name — `3/4` |
+| Nothing known | neither filled, no count |
+
+The mixed case is the normal one, and folding it into "on" made central glow while a circuit under it was dark. A count says which, and unlike a half-tint it cannot be misread. Neither button filled means two different things — mixed, or unknown — so the count is what separates them.
 
 The bridge deliberately does not do this. Deriving it there would mean inventing a telegram the bus never carried, and everything the bridge reports is something it actually saw. Before this, central's cached value was the last command sent, so the app could say "Central: off" with three circuits lit.
 

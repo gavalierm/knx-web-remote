@@ -38,6 +38,10 @@
 
   // Recomputed whenever the bus state changes. Written as a map rather than a
   // function called from the markup, so Svelte can see it depends on `state`.
+  // A derived control has three states, not two: everything below it on,
+  // everything off, or some of each. Folding "some of each" into "on" made
+  // central glow while a circuit under it was dark - a claim that is wrong
+  // more often than it is right, since mixed is the normal case.
   $: values = Object.fromEntries(
     commands.map((command) => {
       if (!command.derivedFrom) {
@@ -47,9 +51,30 @@
         (name) => state[name] && state[name].value !== undefined,
       );
       if (!known.length) return [command.name, undefined];
-      const anyOn = known.some((name) => state[name].value === "1");
-      return [command.name, anyOn ? "1" : "0"];
+      const on = known.filter((name) => state[name].value === "1").length;
+      if (on === 0) return [command.name, "0"];
+      if (on === known.length) return [command.name, "1"];
+      return [command.name, "mixed"];
     }),
+  );
+
+  // How many are lit, for the ones that are mixed. Shown as a count rather
+  // than a colour: "3/4" cannot be misread the way a half-tint can.
+  $: partial = Object.fromEntries(
+    commands
+      .filter((command) => command.derivedFrom)
+      .map((command) => {
+        const known = command.derivedFrom.filter(
+          (name) => state[name] && state[name].value !== undefined,
+        );
+        return [
+          command.name,
+          {
+            on: known.filter((name) => state[name].value === "1").length,
+            total: known.length,
+          },
+        ];
+      }),
   );
   $: health = $healthStore;
   $: live = $liveStore;
@@ -298,7 +323,12 @@
         >
           Vyp
         </button>
-        <span class="name">{command.title}</span>
+        <span class="name">
+          {command.title}
+          {#if values[command.name] === "mixed"}
+            <em>{partial[command.name].on}/{partial[command.name].total}</em>
+          {/if}
+        </span>
         <button
           on:click={onSendMessage}
           value={"ADDR " + command.path + " 1"}
@@ -484,6 +514,16 @@
     text-align: center;
     font-size: 1em;
     font-weight: 600;
+  }
+
+  /* Neither button is filled when a derived control is mixed, so the count is
+     what distinguishes "some of them" from "we do not know". */
+  .circuit .name em {
+    font-style: normal;
+    font-weight: 600;
+    font-size: 0.85em;
+    color: var(--lit);
+    margin-left: 0.4em;
   }
 
   .circuit button {

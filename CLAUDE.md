@@ -74,6 +74,14 @@ It now parses the text protocol into `stateStore` (`{ sala: { type: 'switch', va
 
 `commands` entries carry a `name` that must match the bridge's translator key — that is what bus state arrives under.
 
+### Layout
+
+One circuit is one thing with two states, so it gets **one** name: Vyp on the left, the name in the middle, Zap on the right, and the side that is actually true is filled in. The earlier layout repeated the title on both buttons and carried a dot coloured by CSS rather than by anything real.
+
+Scenes come first and are given room. The crew moves between úvod, chvály and kázeň constantly during a programme; individual circuits are the exception, not the rule.
+
+A circuit whose state the bridge does not know is shown with its name dimmed. Quietly saying "unknown" beats implying "off" — and on this installation unknown is the normal state after a restart, because the bus does not answer read requests.
+
 ### The status panel
 
 Behind the hamburger in the header, collapsed by default — during an event the buttons are what matter. Opening it sends `HEALTH` to the bridge and repeats every five seconds while open; the interval is cleared on close and on destroy. `HEALTH` puts nothing on the KNX bus, so it is safe at any time, including during a programme.

@@ -233,27 +233,29 @@
   {#if !knowsState}
     <div class="status">čaká sa na stav zbernice</div>
   {/if}
-  <div class="buttons">
-    <span class="label">OFF</span>
-    <span class="label">ON</span>
-
+  <div class="circuits">
     {#each commands as command (command.name)}
-      <button
-        on:click={onSendMessage}
-        value={"ADDR " + command.path + " 0"}
-        class="off"
-        class:active={state[command.name]?.value === "0"}
-      >
-        <span>{command.title}</span>
-      </button>
-      <button
-        on:click={onSendMessage}
-        value={"ADDR " + command.path + " 1"}
-        class="on"
-        class:active={state[command.name]?.value === "1"}
-      >
-        <span>{command.title}</span>
-      </button>
+      <div class="circuit">
+        <button
+          on:click={onSendMessage}
+          value={"ADDR " + command.path + " 0"}
+          class="off"
+          class:active={state[command.name]?.value === "0"}
+        >
+          Vyp
+        </button>
+        <span class="name" class:unknown={state[command.name] === undefined}>
+          {command.title}
+        </span>
+        <button
+          on:click={onSendMessage}
+          value={"ADDR " + command.path + " 1"}
+          class="on"
+          class:active={state[command.name]?.value === "1"}
+        >
+          Zap
+        </button>
+      </div>
     {/each}
   </div>
 {/if}
@@ -364,53 +366,57 @@
     font-weight: 600;
   }
 
-  .buttons {
-    display: grid;
-    flex-wrap: wrap;
-    grid-template-columns: 1fr 1fr;
-    grid-gap: 1em;
-  }
-
-  .buttons button {
-    padding: 1em;
+  /* One circuit is one thing with two states, so it gets one name. The layout
+     used to repeat the title on both buttons and carry a dot that was coloured
+     by CSS rather than by anything real. Now: off on the left, name in the
+     middle, on on the right, and the side that is actually true is filled in. */
+  .circuits {
     display: flex;
-    justify-content: space-between;
+    flex-direction: column;
+    gap: 0.6em;
+  }
+
+  .circuit {
+    display: grid;
+    grid-template-columns: 4.5em 1fr 4.5em;
     align-items: center;
-    text-align: left;
+    gap: 0.6em;
+    border: 1px solid #333;
+    border-radius: 4px;
+    padding: 0.4em;
   }
 
-  .buttons button span {
-    flex: 1;
+  .circuit .name {
+    text-align: center;
+    font-size: 0.95em;
   }
 
-  /* The dot used to be coloured by which button it was, so it showed the same
-     thing whatever the lights were doing. It now shows the state the bridge
-     reports: dim means "not the current state", lit means "this is how it is
-     right now" - including changes made from the wall panel or Companion. */
-  .buttons button::before {
-    color: #444;
-    content: "•";
-    font-size: 2em;
-    padding-right: 0.5em;
-    transition: color 0.15s ease;
+  /* Nothing has happened on this address since the bridge started, so its
+     state is genuinely unknown. Saying so quietly beats implying it is off. */
+  .circuit .name.unknown {
+    opacity: 0.45;
   }
 
-  .buttons button.off.active::before {
-    color: red;
+  .circuit button {
+    padding: 0.9em 0.3em;
+    border: 1px solid #444;
+    border-radius: 3px;
+    background: none;
+    font-size: 0.85em;
+    transition:
+      border-color 0.15s ease,
+      background 0.15s ease;
   }
 
-  .buttons button.on.active::before {
-    color: green;
-  }
-
-  .buttons button.active {
-    border-color: currentColor;
+  .circuit button.off.active {
+    border-color: #b00;
+    background: rgba(187, 0, 0, 0.18);
     font-weight: 600;
   }
 
-  .buttons .label {
-    text-align: center;
-    font-size: 0.8em;
-    text-transform: uppercase;
+  .circuit button.on.active {
+    border-color: green;
+    background: rgba(0, 128, 0, 0.18);
+    font-weight: 600;
   }
 </style>

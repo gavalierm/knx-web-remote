@@ -31,15 +31,28 @@ There is **no test, no lint and no typecheck command** in this repo. (A `lint` s
 
 The working tree normally carries uncommitted `dist/` churn from the last build — Vite rewrites the bundle hash on every build. That is noise, not work in progress.
 
-### The host must stay on `http://`
+### The host is http://knx.tymy.sk and must stay on `http://`
 
 The page connects to `ws://`, and every current browser blocks a non-TLS WebSocket from a page served over `https://`, with no way to allow it. Phone control therefore works only while the host serves plain HTTP.
 
-If someone enables HTTPS at the hosting provider, or the provider adds an automatic redirect, this app dies silently and the console error will not be obvious to whoever reports it. Moving to `https://` requires `wss://` on the bridge first, which means TLS on the Pi — a bridge change, not a frontend change.
+Verified 2026-09-20 — the hosting is already configured for this:
+
+```
+http://knx.tymy.sk/    200, no redirect
+https://knx.tymy.sk/   302 -> http://knx.tymy.sk/     (openresty)
+```
+
+**That downgrade redirect is load-bearing. Do not let anyone "fix" it.** Forcing HTTPS — a provider default, a security sweep, a well-meaning admin — kills phone control silently, and the console error will mean nothing to whoever reports it. Moving to `https://` properly requires `wss://` on the bridge first, which means TLS on the Pi: a bridge change, not a frontend change.
 
 **This does not block development.** `npm run dev` on a machine on the hall network connects to the real bridge exactly like the published page does, and the operator verifies from his own phone over that machine's address. Do the work, get it verified, and treat publishing as the last step.
 
-**Known gap:** the URL of that host and the FTP credentials are not recorded anywhere and are not currently known. Ask for them when there is a build ready to publish — not before starting.
+### Publishing
+
+Manual FTP upload of `dist/`. **The FTP credentials are still not recorded anywhere** — ask for them when there is a build ready to publish.
+
+As of 2026-09-20 the live build was `index-4gNYXZnX.js`, `Last-Modified: Sun, 04 Feb 2024`: nothing had been published for two and a half years, and the matching file sits untracked in the working tree.
+
+**The service worker is a trap when publishing.** `sw.js` and `manifest.webmanifest` are live, and a PWA caches its shell hard, so after an upload a returning phone can keep running the previous app until the worker updates. Verify a deployment on a device that has never opened the page, or clear the site data first — otherwise "it didn't upload" and "the worker hasn't updated yet" look identical.
 
 ## How it connects
 

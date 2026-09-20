@@ -29,12 +29,29 @@ The delay is entirely in name resolution, not the connection. `.local` is tried 
 
 This app hardcodes `knxrpi.local` (`App.svelte` overwrites `localStorage._host` with it on every mount) and retries every 5 s, so after any bridge restart the phone sits idle for five seconds before it can show anything, and during an outage those waits chain. Measured from macOS; browsers use their own resolvers, so the exact cost on a phone needs its own measurement — but the name is the thing to stop depending on.
 
-Options, in order of preference:
+Cause confirmed:
 
-1. **A DHCP reservation for the Pi plus a name that is not `.local`.** The address is a lease (`dhcpcd: eth0: leased 10.77.8.208 for 1800 seconds`), so hardcoding the IP without a reservation trades a slow connection for a broken one. Router work — the operator's call.
-2. **Client-side: try the IP first and fall back to the hostname.** Needs no router change, survives an address change, and removes the delay in the common case.
+```
+avahi-daemon on the Pi:          active, hostname knxrpi
+resolving knxrpi.local:          5.01 s  (succeeds, over mDNS)
+router 10.77.8.1 for "knxrpi":   nothing
+router for "knxrpi.local":       nothing
+network search domain:           none
+```
 
-Do not simply hardcode the IP.
+So the name is served by **avahi on the Pi**, and the router knows nothing about it.
+
+**Moving the record to the router is necessary but not sufficient.** RFC 6762 reserves `.local` for mDNS, and macOS and Android send `.local` queries to multicast regardless of what unicast DNS holds — a `knxrpi.local` A record on the router would still be bypassed. **The suffix has to change.**
+
+That five seconds instead of milliseconds also suggests multicast is filtered or rate-limited on this network, which is a second reason not to depend on it.
+
+The fix, in order:
+
+1. **On the router:** a DHCP reservation for the Pi's MAC pinned to 10.77.8.208, and an A record under a name that is **not** `.local` — `knxrpi.lan` or whatever suffix the router serves. Both are needed: the address today is a lease (`dhcpcd: eth0: leased 10.77.8.208 for 1800 seconds`), so a name without a reservation still points at something that can move.
+2. **In this app:** default to that name, and keep a fallback so a resolution failure is not a dead app.
+3. **Leave avahi running** on the Pi. It costs nothing and remains a fallback for anyone on a network without the DNS record.
+
+Do not simply hardcode the address — that trades a slow connection for one that breaks at the next lease change.
 
 ### State of this repository
 

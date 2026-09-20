@@ -66,6 +66,14 @@ The last is the worst of them, because it fails quietly: a wrong claim gets argu
 
 The connection-timing one has a reusable lesson for this project specifically: **connections take seconds, not milliseconds**, so any test sequenced on fixed timers will lie. Drive test steps off `open` events, not `setTimeout`. That the delay was itself the bug being hunted made it worse — the test was built on the assumption the measurement later destroyed.
 
+### Republished 2026-09-20 13:00
+
+Verified by comparing SHA-256 of every published file against the local build: `index.html`, `sw.js`, `registerSW.js`, `manifest.webmanifest` and both hashed assets — six of six identical.
+
+**Wrong turn while checking it.** The first verification searched the published bundle for source identifiers and reported that the reconnect backoff was missing. It was not: `retryDelay` is a local variable and the bundler renames it. The markers that did survive — `mixed`, `visibilitychange`, `Stale socket after wake`, `derivedFrom` — are strings and property names, which minification keeps.
+
+The check that was skipped: ask what survives minification before using a name as evidence. Comparing hashes answers the real question — is the published file the file that was built — without depending on what a minifier leaves behind.
+
 ### Published 2026-09-20 12:52
 
 First publish since 2024-02-04. Verified from outside afterwards rather than assumed:

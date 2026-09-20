@@ -37,6 +37,8 @@ let lastSceneAt = 0;
 
 let global_warr_timer;
 let global_connection_timer;
+let stale_probe_timer = null;
+let retryDelay = 400;
 
 export function setStatus(state) {
 	statusStore.set(state)
@@ -80,6 +82,7 @@ async function onOpen() {
 	setStatus('connected');
 	clearTimeout(global_connection_timer);
 	connectedAt = Date.now();
+	retryDelay = 400;
 	liveStore.set(false);
 	// Ask straight away, not only when the status panel is opened. The answer
 	// carries STATEAGE, which is what tells us whether the state the bridge
@@ -109,10 +112,12 @@ async function onClose() {
 	liveStore.set(false);
 	//disconnected();
 	clearTimeout(global_connection_timer);
-	global_connection_timer = setTimeout(function() {
-		console.log(statusStore);
-		connect();
-	}, 5000);
+	// Start again almost at once and back off from there. A flat five seconds
+	// meant every brief drop looked like a dead system for five seconds, and
+	// the common case - a phone waking up - is exactly when the wait is least
+	// tolerable and most visible.
+	global_connection_timer = setTimeout(connect, retryDelay);
+	retryDelay = Math.min(retryDelay * 2, 5000);
 }
 
 // The bridge speaks plain text, not JSON. This used to parse the frame as JSON,
@@ -200,6 +205,60 @@ async function onMessage(evt) {
 		}
 		return next;
 	});
+}
+
+//
+// Waking up.
+//
+// Two things go wrong when a phone sleeps with this app open, and they look
+// identical from the outside - a long spell of "no connection to the bridge"
+// that reads as a broken system.
+//
+// The socket dies while the app is in the background, and the reconnect is a
+// setTimeout. Browsers throttle background timers hard, often to once a
+// minute, so the retry does not happen when the screen comes back on.
+//
+// Worse, the socket can be dead while readyState still says it is open: a
+// sleeping phone leaves the TCP connection stale, so nothing even tries to
+// reconnect. The server notices within 15 s via its ping and drops the client,
+// but from here it just looks like a bridge that answers nothing.
+//
+// So: on waking, reconnect at once if we know we are down, and if we think we
+// are up, ask a question and disbelieve the socket if nothing comes back.
+//
+function onWake() {
+	if (typeof document !== "undefined" && document.visibilityState !== "visible") {
+		return;
+	}
+
+	if (getStatus() !== "connected") {
+		clearTimeout(global_connection_timer);
+		retryDelay = 400;
+		connect();
+		return;
+	}
+
+	clearTimeout(stale_probe_timer);
+	const before = (get(healthStore) || {}).at || 0;
+	requestHealth();
+	stale_probe_timer = setTimeout(function() {
+		const after = (get(healthStore) || {}).at || 0;
+		if (after !== before) {
+			return; // answered, the socket is genuinely alive
+		}
+		console.log("Stale socket after wake, reconnecting");
+		if (remoteWebSocket) {
+			remoteWebSocket.close();
+		}
+		onClose();
+	}, 2000);
+}
+
+if (typeof document !== "undefined") {
+	document.addEventListener("visibilitychange", onWake);
+	window.addEventListener("pageshow", onWake);
+	window.addEventListener("online", onWake);
+	window.addEventListener("focus", onWake);
 }
 
 // Ask the bridge how it is. Nothing reaches the KNX bus - safe at any time,

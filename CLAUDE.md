@@ -115,6 +115,16 @@ The bridge remembers bus state across restarts, so something is on screen the mo
 
 `liveStore` decides which it is. The bridge replays what it remembers the instant a client connects, so anything arriving in the first 1.5 s is a memory; anything later is the bus actually doing something, and the qualifier disappears. `HEALTH` is requested on connect, not just when the panel opens, because that is where `STATEAGE` comes from.
 
+### Waking from sleep
+
+Two separate faults made a woken phone look like a dead system, and they present identically.
+
+The reconnect is a `setTimeout`, and browsers throttle background timers hard — often to once a minute — so it does not fire when the screen comes back on. And the socket can be dead while `readyState` still reports open, because a sleeping phone leaves the TCP connection stale; nothing then even tries to reconnect, while the server drops the client within 15 s via its ping.
+
+So the client reconnects on `visibilitychange`, `pageshow`, `online` and `focus` rather than waiting for a timer. If it believes it is connected, it does not trust that: it sends `HEALTH` and reconnects if nothing answers within two seconds.
+
+The retry delay also starts at 400 ms and backs off to 5 s, instead of a flat five seconds. Waking up is both the most common drop and the least tolerable place to sit and wait.
+
 ### The status panel
 
 Behind the hamburger in the header, collapsed by default — during an event the buttons are what matter. Opening it sends `HEALTH` to the bridge and repeats every five seconds while open; the interval is cleared on close and on destroy. `HEALTH` puts nothing on the KNX bus, so it is safe at any time, including during a programme.

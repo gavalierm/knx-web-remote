@@ -84,9 +84,13 @@ A circuit whose state the bridge does not know needs no special mark: when **nei
 
 **Never mute text to convey state.** An earlier version dimmed the circuit's name when its state was unknown, which traded the one thing you most need to read for something the buttons already said. Hierarchy comes from size, weight and colour — never from `opacity` on text. The only `opacity` left in the component is on a bar of the hamburger icon, which is decoration.
 
-**The app runs on a white background.** `src/app.css` declares dark values on `:root` and then `body` overrides them with `background: white; color: black`. Style against the light theme; the `:root` block is misleading left-over template code.
+**The app is dark, and that is functional.** It runs on a phone in a darkened hall while a programme is on: a white screen lights the operator's face and carries into the room. `src/app.css` holds the tokens — background, surfaces, text, and a warm lamp amber (`--lit`) as the accent, chosen because what these buttons control is light, not because interfaces are usually blue.
 
-**Buttons carry no border.** That something is pressable is implicit, and a rim inside an already-framed row is a box in a box. Resting state is a light surface, the active one is filled solid with white text so it reads across a dark hall at arm's length. Sections are titled (`Scény`, `Okruhy`) — without headings a row of three unlabelled buttons says nothing about what it controls.
+It also sets the touch behaviour that makes this read as an app rather than a page: no tap highlight, no double-tap zoom, no text selection, and safe-area padding so it sits correctly full-screen on a phone.
+
+Before 2026-09-20 that file was the Vite template's: dark values on `:root`, immediately overridden by a white `body`. Anyone styling against `:root` was quietly misled.
+
+**Buttons carry no border.** That something is pressable is implicit, and a rim inside an already-framed row is a box in a box. Resting state is a surface; the active one is filled solid. A circuit that is on warms its **whole row**, not just its button, so which lights are live reads at a glance from across the hall. The scene in effect glows. Sections are titled (`Scény`, `Okruhy`) — without headings a row of three unlabelled buttons says nothing about what it controls.
 
 ### The status panel
 

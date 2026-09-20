@@ -159,7 +159,10 @@
 </script>
 
 <header>
-  <h1>Svetlá</h1>
+  <div class="title">
+    <h1>Svetlá</h1>
+    <span class="pulse" class:live={status === "connected"}></span>
+  </div>
   <button
     class="hamburger"
     class:open={showStatus}
@@ -235,7 +238,7 @@
   {/if}
   <div class="circuits">
     {#each commands as command (command.name)}
-      <div class="circuit">
+      <div class="circuit" class:lit={state[command.name]?.value === "1"}>
         <button
           on:click={onSendMessage}
           value={"ADDR " + command.path + " 0"}
@@ -258,31 +261,52 @@
   </div>
 {/if}
 
-<style type="text/css">
+<style>
   header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 3em;
+    margin-bottom: 2em;
+  }
+
+  .title {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6em;
   }
 
   h1 {
-    text-transform: uppercase;
-    font-size: 1em;
+    font-size: 1.35em;
+    font-weight: 700;
+    letter-spacing: -0.01em;
     margin: 0;
   }
 
-  /* Deliberately small and quiet. During an event the buttons are what
-     matters; the status panel is for when something is wrong. */
+  /* A live indicator next to the name, so the state of the connection is
+     visible without opening anything. */
+  .pulse {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--dark);
+    flex: none;
+    align-self: center;
+  }
+
+  .pulse.live {
+    background: var(--good);
+    box-shadow: 0 0 0 3px rgba(87, 201, 139, 0.16);
+  }
+
   .hamburger {
     display: flex;
     flex-direction: column;
     justify-content: center;
     gap: 4px;
-    padding: 0.7em;
-    background: #f0f0f0;
+    padding: 0.75em;
+    background: var(--surface);
     border: none;
-    border-radius: 6px;
+    border-radius: var(--r-sm);
     cursor: pointer;
   }
 
@@ -290,7 +314,8 @@
     display: block;
     width: 18px;
     height: 2px;
-    background: currentColor;
+    border-radius: 2px;
+    background: var(--text-2);
     transition: opacity 0.15s ease;
   }
 
@@ -298,21 +323,146 @@
     opacity: 0.25;
   }
 
-  .panel {
-    background: #f6f6f6;
-    border-radius: 6px;
-    padding: 0.6em 0.9em;
-    margin-bottom: 2em;
+  h2 {
+    font-size: 0.72em;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-2);
+    font-weight: 700;
+    margin: 0 0 0.75em;
+  }
+
+  .status {
     font-size: 0.85em;
-    text-align: left;
+    color: var(--text-2);
+    padding: 0.9em 0;
+  }
+
+  /* --- scenes: the primary control ------------------------------------ */
+
+  .scenes {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.6em;
+    margin-bottom: 2.25em;
+  }
+
+  .scenes button {
+    padding: 1.35em 0.4em;
+    border: none;
+    border-radius: var(--r);
+    background: var(--surface);
+    color: var(--text-2);
+    font-size: 0.95em;
+    font-weight: 600;
+    cursor: pointer;
+    transition:
+      background 0.18s ease,
+      color 0.18s ease,
+      box-shadow 0.18s ease,
+      transform 0.08s ease;
+  }
+
+  .scenes button:active {
+    transform: scale(0.97);
+  }
+
+  .scenes button.active {
+    background: var(--lit);
+    color: #241a08;
+    box-shadow: 0 0 22px var(--lit-glow);
+  }
+
+  /* --- circuits -------------------------------------------------------- */
+
+  .circuits {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55em;
+  }
+
+  /* The whole row warms up when the circuit is on, so which lights are live
+     reads at a glance from across a dark hall - not just from the button. */
+  .circuit {
+    display: grid;
+    grid-template-columns: 4.6em 1fr 4.6em;
+    align-items: center;
+    gap: 0.55em;
+    background: var(--surface);
+    border-radius: var(--r);
+    padding: 0.45em;
+    transition:
+      background 0.18s ease,
+      box-shadow 0.18s ease;
+  }
+
+  .circuit.lit {
+    background: var(--lit-soft);
+    box-shadow: inset 0 0 0 1px rgba(255, 179, 64, 0.22);
+  }
+
+  .circuit .name {
+    text-align: center;
+    font-size: 1em;
+    font-weight: 600;
+  }
+
+  .circuit button {
+    padding: 1em 0.3em;
+    border: none;
+    border-radius: var(--r-sm);
+    background: var(--surface-hi);
+    color: var(--text-2);
+    font-size: 0.8em;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    cursor: pointer;
+    transition:
+      background 0.18s ease,
+      color 0.18s ease,
+      transform 0.08s ease;
+  }
+
+  .circuit button:active {
+    transform: scale(0.95);
+  }
+
+  .circuit button.on.active {
+    background: var(--lit);
+    color: #241a08;
+  }
+
+  .circuit button.off.active {
+    background: var(--dark);
+    color: #0e1013;
+  }
+
+  /* --- status panel ---------------------------------------------------- */
+
+  .panel {
+    background: var(--surface);
+    border-radius: var(--r);
+    padding: 0.4em 1em 0.9em;
+    margin-bottom: 2em;
+    font-size: 0.88em;
   }
 
   .panel .row {
     display: flex;
     justify-content: space-between;
+    align-items: baseline;
     gap: 1em;
-    padding: 0.35em 0;
-    border-bottom: 1px solid #e4e4e4;
+    padding: 0.55em 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .panel .row span {
+    color: var(--text-2);
+  }
+
+  .panel .row b {
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
   }
 
   .panel .row:last-of-type {
@@ -320,115 +470,17 @@
   }
 
   .panel .good {
-    color: green;
+    color: var(--good);
   }
 
   .panel .bad {
-    color: red;
-  }
-
-  h2 {
-    font-size: 0.8em;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: #333;
-    font-weight: 700;
-    margin: 0 0 0.7em;
-    text-align: left;
+    color: var(--bad);
   }
 
   .panel .note {
-    margin: 0.8em 0 0.2em;
-    color: #555;
-    line-height: 1.4;
-  }
-
-  .status {
-    font-size: 0.8em;
-    text-transform: uppercase;
-  }
-
-  /* Scenes first and given room: this is the primary control during a
-     programme, and the individual circuits are the exception. */
-  .scenes {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    grid-gap: 0.6em;
-    margin-bottom: 2.5em;
-  }
-
-  /* No borders on the buttons themselves - that something is pressable is
-     implicit, and a rim inside a framed row is a box in a box. A surface
-     carries it, and the active one is filled properly so it reads across a
-     dark hall at arm's length. */
-  .scenes button {
-    padding: 1.1em 0.4em;
-    border: none;
-    border-radius: 6px;
-    background: #f0f0f0;
-    color: inherit;
-    font-size: 0.95em;
-    cursor: pointer;
-    transition:
-      background 0.15s ease,
-      color 0.15s ease;
-  }
-
-  .scenes button.active {
-    background: #1f7a33;
-    color: #fff;
-    font-weight: 600;
-  }
-
-  /* One circuit is one thing with two states, so it gets one name. The layout
-     used to repeat the title on both buttons and carry a dot that was coloured
-     by CSS rather than by anything real. Now: off on the left, name in the
-     middle, on on the right, and the side that is actually true is filled in. */
-  .circuits {
-    display: flex;
-    flex-direction: column;
-    gap: 0.6em;
-  }
-
-  .circuit {
-    display: grid;
-    grid-template-columns: 4.5em 1fr 4.5em;
-    align-items: center;
-    gap: 0.6em;
-    background: #fafafa;
-    border-radius: 6px;
-    padding: 0.35em;
-  }
-
-  /* Unknown state needs no dimming here: when neither button is filled, that
-     is what unknown looks like. The name stays fully readable either way. */
-  .circuit .name {
-    text-align: center;
-    font-size: 1em;
-  }
-
-  .circuit button {
-    padding: 0.9em 0.3em;
-    border: none;
-    border-radius: 5px;
-    background: #ececec;
-    color: inherit;
-    font-size: 0.85em;
-    cursor: pointer;
-    transition:
-      background 0.15s ease,
-      color 0.15s ease;
-  }
-
-  .circuit button.off.active {
-    background: #b02020;
-    color: #fff;
-    font-weight: 600;
-  }
-
-  .circuit button.on.active {
-    background: #1f7a33;
-    color: #fff;
-    font-weight: 600;
+    margin: 0.7em 0 0;
+    color: var(--text-2);
+    font-size: 0.92em;
+    line-height: 1.45;
   }
 </style>

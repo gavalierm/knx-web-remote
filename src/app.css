@@ -1,66 +1,80 @@
+/*
+  Dark by default, and not as a fashion. This runs on a phone in a darkened
+  hall while a programme is on: a white screen lights up the operator's face
+  and carries into the room. The accent is a warm lamp amber rather than the
+  usual interface blue, because what the buttons control is light.
+
+  The previous file was the Vite template's - it declared dark values on :root
+  and then overrode them with a white body, which quietly misled anyone
+  styling against it.
+*/
+
 :root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  --bg: #0e1013;
+  --surface: #171a20;
+  --surface-hi: #1f242c;
+  --line: #2b313a;
+
+  --text: #edeff2;
+  /* Secondary text, still comfortably readable. Hierarchy comes from colour
+     and weight, never from fading text out. */
+  --text-2: #a7aeb9;
+
+  --lit: #ffb340;
+  --lit-soft: rgba(255, 179, 64, 0.14);
+  --lit-glow: rgba(255, 179, 64, 0.28);
+
+  --dark: #6b7480;
+  --bad: #ef5350;
+  --good: #57c98b;
+
+  --r: 14px;
+  --r-sm: 10px;
+
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Helvetica, Arial,
+    sans-serif;
   line-height: 1.5;
-  font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
+* {
+  box-sizing: border-box;
 }
 
-a:hover {
-  color: #535bf2;
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--bg);
+  color: var(--text);
 }
 
 body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
-  background: white;
-  color: black;
-}
-
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
-}
-
-.card {
-  padding: 2em;
-}
-
-#app {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+  /* Touch behaviour, so it reads as an app rather than a web page: no blue
+     flash on tap, no double-tap zoom, no accidental text selection while
+     someone is jabbing at a button in the dark. */
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
+  overscroll-behavior-y: contain;
 }
 
 button {
-  border-radius: 8px;
-  border: 1px solid #e2e2e2;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #f9f9f9;
-  cursor: pointer;
-  transition: border-color 0.25s;
+  font: inherit;
+  color: inherit;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
-button span {
-  color: black;
+#app {
+  max-width: 560px;
+  margin: 0 auto;
+  /* Respect the notch and the home indicator - this lives full-screen on a
+     phone, installed as a PWA. */
+  padding: calc(1.5rem + env(safe-area-inset-top)) 1.25rem
+    calc(2rem + env(safe-area-inset-bottom));
+  text-align: left;
 }

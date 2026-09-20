@@ -45,20 +45,21 @@ If someone enables HTTPS at the hosting provider, or the provider adds an automa
 
 `src/lib/websocketClient.svelte.js` builds the URL from `localStorage` keys `_host` and `_port`, exposes a `statusStore` (`disconnected` / `connecting` / `connected`) and retries every 5 s.
 
-But `App.svelte` **overwrites both keys on every mount**:
+`App.svelte` sets defaults in `onMount` — `knxrpi.lan` and `9240` — but **only when the keys are missing**, so a value set deliberately survives. A host still carrying the old `knxrpi.local` is migrated to `knxrpi.lan` on load.
 
-```js
-localStorage.setItem("_host", "knxrpi.local");
-localStorage.setItem("_port", "9240");
-```
+**Use `knxrpi.lan`, never `knxrpi.local`.** The `.local` name is served by avahi on the Pi, and `.local` is reserved for mDNS, so browsers send it to multicast — measured at 5.03 s per lookup on this network against 0.04 s for `knxrpi.lan`, which is a router DNS record against a static 10.77.8.208. Until 2026-09-20 this app hardcoded the slow name and retried every 5 s, so after any bridge restart the phone sat idle before it could show anything.
 
-So the target is effectively hardcoded and there is no UI to change it. `knxrpi.local` resolves through the router's local DNS. **The app only works on the hall network** — it is publicly hosted but not remotely usable.
+There is still no UI to change the host. **The app only works on the hall network** — it is publicly hosted but not remotely usable.
 
 ## Known defects and unfinished work
 
 These are real, and none of them is a mystery — they are places where work stopped.
 
-**Inbound messages are discarded.** `onMessage` parses the frame as JSON and returns early on failure, logging `"No json"`. The bridge sends plain text (`SWITCH SALA 1`). The result: this app never displays actual light state, and its buttons are blind. Companion, the other client, *does* consume that channel. If this app is ever meant to show state, this is the one thing to fix — and the fix belongs here, not in the protocol.
+**Fixed 2026-09-20 — inbound messages used to be discarded.** `onMessage` parsed each frame as JSON, logged `"No json"` and returned, so everything the bridge sent was thrown away and the buttons showed nothing but their own CSS: the dot was red on the OFF button and green on the ON button regardless of what the lights were doing.
+
+It now parses the text protocol into `stateStore` (`{ sala: { type: 'switch', value: '1' } }`), and the button matching the current value is lit while the other is dim — so a change made from the wall panel or from Companion shows up here. The store is cleared on disconnect, because displaying what the lights were doing when the connection dropped is the same lie in a different form; the bridge replays current state as soon as a client connects.
+
+`commands` entries carry a `name` that must match the bridge's translator key — that is what bus state arrives under.
 
 **Wake lock is disabled.** `@zakj/no-sleep` is the only runtime dependency and the whole wake-lock path exists, but `noSleep.enable()` is commented out, leaving only `console.warn("Enable NoSleep")`. The screen therefore sleeps mid-event. Commit `60980c9 StayAwake` stopped halfway.
 

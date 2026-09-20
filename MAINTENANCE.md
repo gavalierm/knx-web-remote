@@ -53,6 +53,15 @@ The fix, in order:
 
 Do not simply hardcode the address — that trades a slow connection for one that breaks at the next lease change.
 
+### Wrong turns while doing this work
+
+| What happened | Actually | The check that was skipped |
+|---|---|---|
+| Passed source to the Svelte autofixer with HTML-escaped angle brackets (`&lt;script&gt;`). It returned a JavaScript parse error, which reads like a fault in the code | The code was fine. Tool parameters take **raw source**, never HTML-escaped text — the escaping was introduced while composing the call | Read the error literally: a parse failure at line 8 column 2 of a file that had just built cleanly points at the input, not the source |
+| Reported that a second WebSocket client "received 0 state messages", and treated it as the replay feature failing | The client had never connected. Its `open` event was missing from the output entirely, and the bridge's own log showed all three clients connecting and all three being served | Look for the connect event before judging what arrived after it. The test used fixed timers, and connections here took five seconds because of the `.local` lookup, so the steps ran out of order |
+
+The second one has a reusable lesson for this project specifically: **connections take seconds, not milliseconds**, so any test sequenced on fixed timers will lie. Drive test steps off `open` events, not `setTimeout`. That the delay was itself the bug being hunted made it worse — the test was built on the assumption the measurement later destroyed.
+
 ### State of this repository
 
 Untouched so far in this maintenance work. All effort went to the bridge, where both causes of the recurring outage were. Known defects, unchanged and documented in `CLAUDE.md`:

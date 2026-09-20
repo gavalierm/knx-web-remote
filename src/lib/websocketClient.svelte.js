@@ -1,10 +1,19 @@
-import { isNa, isJson } from "./htmlHelper.js";
+import { isNa } from "./htmlHelper.js";
 import { writable, get } from 'svelte/store';
 
 const LOGGING = false
 
 let remoteWebSocket;
 export const statusStore = writable('disconnected');
+
+// What the bus is actually doing, keyed by the name the bridge uses:
+//   { sala: { type: 'switch', value: '1' }, kazen: { type: 'scene', value: '2' } }
+//
+// The bridge broadcasts a line for every telegram on the bus, and replays the
+// last known state to a client as soon as it connects, so this fills in
+// immediately rather than waiting for someone to press something.
+export const stateStore = writable({});
+
 let global_warr_timer;
 let global_connection_timer;
 
@@ -65,6 +74,10 @@ async function onError(evt) {
 async function onClose() {
 	console.log("Close");
 	setStatus('disconnected');
+	// Forget the bus state. Showing what the lights were doing when the
+	// connection dropped is exactly the stale-display problem being fixed here:
+	// the bridge replays the current state as soon as we reconnect.
+	stateStore.set({});
 	//disconnected();
 	clearTimeout(global_connection_timer);
 	global_connection_timer = setTimeout(function() {
@@ -73,13 +86,40 @@ async function onClose() {
 	}, 5000);
 }
 
+// The bridge speaks plain text, not JSON. This used to parse the frame as JSON,
+// log "No json" and return - so every message from the bus was thrown away and
+// the buttons showed nothing but their own CSS. See PROTOCOL.md in the
+// knx-usb-ws repository for the format.
+//
+//   SWITCH SALA 1        a light changed, by whoever - us, Companion, the wall panel
+//   SCENE KAZEN 2        a scene was recalled
+//   ADDR 0/0/1 1         another client's raw command, echoed to us
+//
 async function onMessage(evt) {
-	let data = isJson(evt.data);
-	if (data === undefined) {
-		console.log("No json", evt.data);
-		return false;
+	const raw = String(evt.data).trim();
+	if (!raw) {
+		return;
 	}
-	console.log(data);
+
+	const parts = raw.split(" ");
+	if (parts.length !== 3) {
+		// Commands echoed from other clients (ADDR .., SCENE ..) and anything
+		// unrecognised. Nothing to display, and not worth a console warning on
+		// every button press somebody else makes.
+		if (LOGGING) console.log("Ignoring:", raw);
+		return;
+	}
+
+	const [type, name, value] = parts;
+	if (type !== "SWITCH" && type !== "SCENE") {
+		if (LOGGING) console.log("Unknown message type:", raw);
+		return;
+	}
+
+	stateStore.update((state) => ({
+		...state,
+		[name.toLowerCase()]: { type: type.toLowerCase(), value: value },
+	}));
 }
 
 export const sendMessage = (message) => {
